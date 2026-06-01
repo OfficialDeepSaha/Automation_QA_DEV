@@ -1,0 +1,335 @@
+{
+  "name": "GitHub Repos Morning Brief",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "github-repos",
+        "options": {
+          "noResponseBody": true,
+          "responseCode": {
+            "values": {
+              "responseCode": 204
+            }
+          }
+        }
+      },
+      "id": "1e50c2cd-ccb3-49ab-9c53-a27312ee1a3e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        528
+      ],
+      "webhookId": "ef6ae42e-56d9-4558-a009-d95fd63f2bc8"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/search/repositories?q=topic:nodejs&sort=stars&per_page=10",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "50c183b8-23e7-467a-946c-ea082e63711c",
+      "name": "Fetch GitHub Repos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        528
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "63ikFd9G29t40nbP",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1510959173737779322/0omxn3FSnRv3S7N9f6gADBZIr8HhQmR9N8xlhc8svZJmSutz5mZRA1D7LSCHp6sx9O4M",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"content\": \"⚠️ Workflow failed: \" + ($json.error || $json.message || JSON.stringify($json)) } }}",
+        "options": {}
+      },
+      "id": "ceac976e-f90c-401f-8cd8-f0b229470a23",
+      "name": "Error Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1360,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const repos = $input.first().json.items || [];\n\nconst sorted = repos\n  .sort((a, b) => b.stargazers_count - a.stargazers_count)\n  .slice(0, 5);\n\nreturn sorted.map(repo => ({\n  json: {\n    full_name: repo.full_name,\n    stars: repo.stargazers_count,\n    description: repo.description,\n    url: repo.html_url,\n    owner: repo.owner.login\n  }\n}));"
+      },
+      "id": "548334f7-6669-4c04-aafd-3cb39a7297d8",
+      "name": "Extract Top 5 Repos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.stars }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "742cd054-e2a7-49e9-b880-b86d5d66aa56",
+      "name": "Check Stars > 1000",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.full_name }}/readme",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5330d079-72e7-4508-b2c7-c5e05d19c06a",
+      "name": "Fetch README",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1136,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "63ikFd9G29t40nbP",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1510959173737779322/0omxn3FSnRv3S7N9f6gADBZIr8HhQmR9N8xlhc8svZJmSutz5mZRA1D7LSCHp6sx9O4M",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"content\": \"🌅 **Morning Brief – Top 5 Node.js Repos**\\n\\n\" + $json.digest.join(\"\") } }}",
+        "options": {}
+      },
+      "id": "493d776f-9499-49c4-a4ad-4f3507e3fc15",
+      "name": "Send Discord Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1584,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "noop",
+              "name": "skipped",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "66107b61-35cb-47c8-9eb9-586b61a5e987",
+      "name": "NoOp",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "={{ $json.full_name + \" - ⭐ \" + $json.stars + \"\\n\" + $json.description + \"\\n\" + $json.url + \"\\n\\n\" }}",
+              "renameField": true,
+              "outputFieldName": "digest"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8b459d33-ae2c-4f46-9f3a-d9dadddc6436",
+      "name": "Aggregate Repos",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Fetch GitHub Repos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch GitHub Repos": {
+      "main": [
+        [
+          {
+            "node": "Extract Top 5 Repos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Top 5 Repos": {
+      "main": [
+        [
+          {
+            "node": "Check Stars > 1000",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stars > 1000": {
+      "main": [
+        [
+          {
+            "node": "Fetch README",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoOp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch README": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Repos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Discord Notification": {
+      "main": [
+        []
+      ]
+    },
+    "Aggregate Repos": {
+      "main": [
+        [
+          {
+            "node": "Send Discord Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3b9f3c54-83d6-412e-bb44-ab7ed480cb74",
+  "meta": {
+    "instanceId": "7f1edf8aa159879ec1c98128bd3538335b36d613da010fee38ac4f37b896d727"
+  },
+  "id": "HzN1pCLIOiqlrjVf",
+  "tags": []
+}

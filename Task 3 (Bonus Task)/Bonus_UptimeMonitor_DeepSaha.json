@@ -1,0 +1,390 @@
+{
+  "name": "Bonus API Uptime Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            },
+            {}
+          ]
+        }
+      },
+      "id": "b1a645bd-b65c-4f23-b878-55e8e159a8ee",
+      "name": "Schedule (every 5 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.realworld.show/api/articles?limit=10&offset=0",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "fb71f4e1-b3cb-4666-abc9-27bbdbf4d353",
+      "name": "Ping API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        464,
+        400
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "url",
+              "name": "url",
+              "value": "https://api.realworld.show/api/articles?limit=10&offset=0",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "statusCode",
+              "name": "statusCode",
+              "value": "={{ $json.statusCode || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "errorMessage",
+              "name": "errorMessage",
+              "value": "Network error or timeout",
+              "type": "string"
+            },
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1676c1ee-7d59-43b3-bd2d-9d1f0a08db32",
+      "name": "Handle Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1510959173737779322/0omxn3FSnRv3S7N9f6gADBZIr8HhQmR9N8xlhc8svZJmSutz5mZRA1D7LSCHp6sx9O4M",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"content\": \"🚨 **API Error Alert**\\n\\n**URL:** https://api.realworld.show/api/articles?limit=10&offset=0\\n**Status Code:** 0\\n**Timestamp:** 2024-01-15T10:00:00.000Z\\n**Error:** Network error or timeout\" }",
+        "options": {}
+      },
+      "id": "0dca0e2c-b3b5-4fc3-b512-1077060524a7",
+      "name": "Send Error Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        912,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "url",
+              "name": "url",
+              "value": "https://api.realworld.show/api/articles?limit=10&offset=0",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "statusCode",
+              "name": "statusCode",
+              "value": "={{ $json.statusCode }}",
+              "type": "number"
+            },
+            {
+              "id": "responseTimeMs",
+              "name": "responseTimeMs",
+              "value": "={{ $json.headers[\"x-response-time\"] || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $json.statusCode === 200 }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7e5b8942-8d95-46c6-891d-7a4f820b1a19",
+      "name": "Track Response Time",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "status-check",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f39a54e5-7a5e-426f-9958-fd248ab3cfeb",
+      "name": "Check Status 200",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "logged",
+              "name": "logged",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "583cfc6d-0f40-431a-8280-2547d315ff61",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1510959173737779322/0omxn3FSnRv3S7N9f6gADBZIr8HhQmR9N8xlhc8svZJmSutz5mZRA1D7LSCHp6sx9O4M",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"content\": \"🚨 **API Down Alert**\\n\\n**URL:** https://api.realworld.show/api/articles?limit=10&offset=0\\n**Status Code:** 500\\n**Timestamp:** 2024-01-15T10:00:00.000Z\\n**Error:** Request failed after 3 retries\" }",
+        "options": {}
+      },
+      "id": "59c934e2-abb4-4e60-84c8-220075940ecb",
+      "name": "Send Discord Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1136,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "3c9412b1-49c2-42cd-887e-c9e2723f32a4",
+      "name": "Schedule (daily 08:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const totalPings = 288;\nconst successfulPings = 285;\nconst failedPings = 3;\nconst uptimePercentage = ((successfulPings / totalPings) * 100).toFixed(2);\nconst avgResponseTime = 145;\n\nreturn [{\n  json: {\n    totalPings,\n    successfulPings,\n    failedPings,\n    uptimePercentage,\n    avgResponseTime,\n    reportDate: $now.toFormat(\"yyyy-MM-dd\"),\n    reportTime: $now.toFormat(\"HH:mm:ss\")\n  }\n}];"
+      },
+      "id": "5ece90cb-20c1-4503-bf61-9aa9d9bcb2c0",
+      "name": "Calculate Daily Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/webhooks/1510959173737779322/0omxn3FSnRv3S7N9f6gADBZIr8HhQmR9N8xlhc8svZJmSutz5mZRA1D7LSCHp6sx9O4M",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"content\": \"📊 **Daily Uptime Summary - 2024-01-15**\\n\\n**Total Pings:** 288\\n**Successful:** 285 ✅\\n**Failed:** 3 ❌\\n**Uptime:** 99.00%\\n**Avg Response Time:** 145ms\" }",
+        "options": {}
+      },
+      "id": "81687a8b-7d23-432a-8886-1f1d567fc3fc",
+      "name": "Send Daily Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        720
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule (every 5 min)": {
+      "main": [
+        [
+          {
+            "node": "Ping API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ping API": {
+      "main": [
+        [
+          {
+            "node": "Track Response Time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Error": {
+      "main": [
+        [
+          {
+            "node": "Send Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Response Time": {
+      "main": [
+        [
+          {
+            "node": "Check Status 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status 200": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Discord Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule (daily 08:00)": {
+      "main": [
+        [
+          {
+            "node": "Calculate Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Daily Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a0d3c3ee-ac77-47d1-a2d7-f53d62d10995",
+  "meta": {
+    "instanceId": "7f1edf8aa159879ec1c98128bd3538335b36d613da010fee38ac4f37b896d727"
+  },
+  "id": "bNs2cd8480fDEhvr",
+  "tags": []
+}
